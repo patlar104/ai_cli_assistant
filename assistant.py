@@ -25,10 +25,14 @@ def cli() -> None:
 def build_client() -> genai.Client:
     """Create a Gen AI client using the API key from the environment."""
     load_dotenv()
-    api_key = os.getenv("GOOGLE_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if not api_key:
         console.print(
-            "[bold red]Error:[/bold red] Missing GOOGLE_API_KEY in environment or .env file."
+            Panel.fit(
+                "Set GEMINI_API_KEY (preferred) or GOOGLE_API_KEY in the environment or .env file.",
+                title="Missing API key",
+                border_style="red",
+            )
         )
         raise typer.Exit(code=1)
 

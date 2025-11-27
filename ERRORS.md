@@ -6,7 +6,7 @@ Common issues you may see while using `assistant.py ask` and how to handle them.
 - **Unexpected argument / missing required option**: Typer shows usage. Fix the command (e.g., include `-p "your prompt"`).
 
 ## API key and auth
-- **Missing `GOOGLE_API_KEY`**: CLI prints a red error and exits. Add the key to `.env` and re-run.
+- **Missing API key**: CLI prints a red error and exits. Add `GEMINI_API_KEY` (preferred) or `GOOGLE_API_KEY` to `.env` and re-run.
 - **Invalid/expired key (401/403)**: API error panel shows the auth failure. Regenerate the key or check permissions.
 - **Wrong project/permissions (403 PERMISSION_DENIED)**: Ensure the key has access to the chosen model.
 
