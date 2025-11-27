@@ -1,0 +1,23 @@
+# Virtual environments
+.venv/
+env/
+
+# Python cache and build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+
+# Environment and secrets
+.env
+.env.*
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
