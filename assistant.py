@@ -84,13 +84,53 @@ def ask(
         raise typer.Exit(code=1)
 
     if not getattr(response, "text", None):
-        console.print(
-            Panel.fit(
-                "No text returned from the model.",
-                title="Empty Response",
-                border_style="yellow",
+        safety_details = []
+
+        prompt_feedback = getattr(response, "prompt_feedback", None)
+        if prompt_feedback:
+            block_reason = getattr(prompt_feedback, "block_reason", None)
+            if block_reason and "SAFETY" in str(block_reason).upper():
+                prompt_ratings = getattr(prompt_feedback, "safety_ratings", None) or []
+                for rating in prompt_ratings:
+                    category = getattr(rating, "category", "Unknown category")
+                    probability = getattr(rating, "probability", "unknown probability")
+                    safety_details.append(
+                        f"Prompt blocked: {category} ({probability})"
+                    )
+
+        for index, candidate in enumerate(getattr(response, "candidates", None) or []):
+            finish_reason = getattr(candidate, "finish_reason", None)
+            if finish_reason and "SAFETY" in str(finish_reason).upper():
+                ratings = getattr(candidate, "safety_ratings", None) or []
+                if ratings:
+                    for rating in ratings:
+                        category = getattr(rating, "category", "Unknown category")
+                        probability = getattr(rating, "probability", "unknown probability")
+                        safety_details.append(
+                            f"Candidate {index + 1} blocked: {category} ({probability})"
+                        )
+                else:
+                    safety_details.append(
+                        f"Candidate {index + 1} blocked for safety (no ratings provided)."
+                    )
+
+        if safety_details:
+            console.print(
+                Panel.fit(
+                    "\n".join(safety_details),
+                    title="Safety Blocked",
+                    border_style="red",
+                )
             )
-        )
+        else:
+            console.print(
+                Panel.fit(
+                    "No text returned from the model.",
+                    title="Empty Response",
+                    border_style="yellow",
+                )
+            )
+
         raise typer.Exit(code=1)
 
     console.print(
