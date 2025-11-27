@@ -21,7 +21,8 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 cp .env.example .env
-echo "GOOGLE_API_KEY=AIzaSyBY29cUWeeQN_j_NbrLGxUpKLjfJp8xm_w" >> .env
+# Replace with your own key; the default placeholder matches .env.example
+echo "GOOGLE_API_KEY=your-api-key-here" >> .env
 ```
 
 PowerShell (Windows):
@@ -32,7 +33,8 @@ python -m venv .venv
 pip install --upgrade pip
 pip install -r requirements.txt
 Copy-Item .env.example .env
-Add-Content .env "GOOGLE_API_KEY=your-key-here"
+# Replace with your own key; the default placeholder matches .env.example
+Add-Content .env "GOOGLE_API_KEY=your-api-key-here"
 ```
 
 ## Usage
