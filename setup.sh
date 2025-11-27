@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 if [ ! -f ".env" ]; then
   cp .env.example .env
-  echo "Created .env (remember to add your GOOGLE_API_KEY)."
+  echo "Created .env (add your GEMINI_API_KEY or GOOGLE_API_KEY)."
 fi
 
 echo ""

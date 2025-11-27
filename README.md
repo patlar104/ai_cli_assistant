@@ -4,7 +4,7 @@ Minimal terminal assistant powered by the official Google Gen AI Python SDK. Wor
 
 ## Prerequisites
 - Python 3.14+ installed
-- Google API key for Gen AI (`GOOGLE_API_KEY`)
+- Google Gemini API key set as `GEMINI_API_KEY` (preferred) or `GOOGLE_API_KEY` (legacy)
 
 ### Install Python 3.14
 - macOS: `brew install python@3.14` (or use pyenv: `brew install pyenv && pyenv install 3.14.0`)
@@ -21,7 +21,7 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 cp .env.example .env
-echo "GOOGLE_API_KEY=AIzaSyBY29cUWeeQN_j_NbrLGxUpKLjfJp8xm_w" >> .env
+echo "GEMINI_API_KEY=your-api-key-here" >> .env
 ```
 
 PowerShell (Windows):
@@ -32,7 +32,7 @@ python -m venv .venv
 pip install --upgrade pip
 pip install -r requirements.txt
 Copy-Item .env.example .env
-Add-Content .env "GOOGLE_API_KEY=your-key-here"
+Add-Content .env "GEMINI_API_KEY=your-api-key-here"
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ python assistant.py ask -p "Explain Python lists" -m "gemini-2.5-flash"
 - `-p/--prompt` is required; `-m/--model` is optional (defaults to `gemini-2.5-flash`).
 
 ## Troubleshooting
-- Missing API key: ensure `.env` contains `GOOGLE_API_KEY` and the virtualenv is activated.
+- Missing API key: ensure `.env` contains `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) and the virtualenv is activated.
 - Request fails: check network connectivity, verify the model name, and confirm the API key has access.
 - Rich/typer import errors: reinstall deps inside the virtualenv (`pip install -r requirements.txt`).
 - Still stuck: run with `--help` to confirm CLI options and rerun with a simpler prompt.

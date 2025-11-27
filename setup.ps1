@@ -23,7 +23,7 @@ pip install -r requirements.txt
 
 if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
-    Write-Host "Created .env (add your GOOGLE_API_KEY)."
+    Write-Host "Created .env (add your GEMINI_API_KEY or GOOGLE_API_KEY)."
 }
 
 Write-Host ""
