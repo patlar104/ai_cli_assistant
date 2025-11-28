@@ -1,0 +1,23 @@
+# AI Assistant Configuration
+# See https://github.com/patlar104/ai_cli_assistant for documentation
+
+# Default model to use
+default_model: gemini-2.5-flash
+
+# Temperature controls randomness (0.0 = deterministic, 2.0 = very random)
+temperature: 0.7
+
+# Maximum tokens in response
+max_tokens: 2048
+
+# Enable conversation history logging
+enable_history: true
+
+# History file location
+history_file: ~/.ai_assistant_history.jsonl
+
+# Verbose output for debugging
+verbose: false
+
+# Stream responses by default
+stream_by_default: false
