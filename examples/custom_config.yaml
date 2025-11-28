@@ -1,0 +1,22 @@
+# Example Custom Configuration
+
+# Use this file as a template for project-specific settings
+
+# Model Selection
+default_model: gemini-2.5-pro  # Use pro model for better quality
+
+# Creativity Settings
+temperature: 0.8  # Higher creativity for brainstorming
+
+# Token Limits
+max_tokens: 4096  # Allow longer responses
+
+# History Settings
+enable_history: true
+history_file: ./project_history.jsonl  # Save history in project folder
+
+# Debug Settings
+verbose: false
+
+# Streaming
+stream_by_default: false
