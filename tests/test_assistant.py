@@ -1,25 +1,19 @@
 from pathlib import Path
 import sys
-
 import pytest
 import typer
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-import assistant
-
+from ai_cli_assistant import cli
 
 class DummyClient:
     """Lightweight stand-in for the real SDK client."""
 
-
 @pytest.fixture(autouse=True)
 def disable_dotenv(monkeypatch):
     """Prevent .env contents from affecting API key resolution in tests."""
-    monkeypatch.setattr(assistant, "load_dotenv", lambda: None)
+    # Patch load_dotenv in the cli module where it is used/imported
+    monkeypatch.setattr(cli, "load_dotenv", lambda: None)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
-
 
 def test_build_client_prefers_gemini_when_both_keys_set(monkeypatch):
     captured = {}
@@ -30,13 +24,13 @@ def test_build_client_prefers_gemini_when_both_keys_set(monkeypatch):
 
     monkeypatch.setenv("GEMINI_API_KEY", "gemini-secret")
     monkeypatch.setenv("GOOGLE_API_KEY", "google-secret")
-    monkeypatch.setattr(assistant.genai, "Client", fake_client)
+    # Patch genai.Client in the cli module
+    monkeypatch.setattr(cli.genai, "Client", fake_client)
 
-    client = assistant.build_client()
+    client = cli.build_client()
 
     assert isinstance(client, DummyClient)
     assert captured["api_key"] == "gemini-secret"
-
 
 def test_build_client_falls_back_to_google_key(monkeypatch):
     captured = {}
@@ -46,21 +40,24 @@ def test_build_client_falls_back_to_google_key(monkeypatch):
         return DummyClient()
 
     monkeypatch.setenv("GOOGLE_API_KEY", "google-only")
-    monkeypatch.setattr(assistant.genai, "Client", fake_client)
+    monkeypatch.setattr(cli.genai, "Client", fake_client)
 
-    client = assistant.build_client()
+    client = cli.build_client()
 
     assert isinstance(client, DummyClient)
     assert captured["api_key"] == "google-only"
 
-
 def test_build_client_exits_when_no_keys_found(monkeypatch, capsys):
-    monkeypatch.setattr(assistant.genai, "Client", lambda api_key: DummyClient())
+    monkeypatch.setattr(cli.genai, "Client", lambda api_key: DummyClient())
 
     with pytest.raises(typer.Exit) as excinfo:
-        assistant.build_client()
+        cli.build_client()
 
     assert excinfo.value.exit_code == 1
+    # We need to capture stdout/stderr to check for the error message
+    # The cli uses rich console, which prints to stdout/stderr
+    # capsys should capture it.
     output = capsys.readouterr().out
+    # The error message in cli.py says "Set GEMINI_API_KEY (preferred) or GOOGLE_API_KEY"
     assert "GEMINI_API_KEY" in output
     assert "GOOGLE_API_KEY" in output
