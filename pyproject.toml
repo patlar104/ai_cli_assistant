@@ -58,6 +58,9 @@ package-dir = {"" = "src"}
 where = ["src"]
 include = ["ai_cli_assistant*"]
 
+[tool.setuptools.package-data]
+"ai_cli_assistant" = ["prompts/*.txt", "prompts/examples/*.txt"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"

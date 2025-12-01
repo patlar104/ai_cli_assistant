@@ -1,6 +1,7 @@
 """Interactive chat session example."""
 
-from ai_cli_assistant.cli import build_client, call_api_with_retry, handle_response, load_system_prompt
+from ai_cli_assistant.api import build_client, call_api_with_retry, handle_response
+from ai_cli_assistant.cli import load_system_prompt
 from ai_cli_assistant import config
 from rich.console import Console
 

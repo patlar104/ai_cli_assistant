@@ -1,8 +1,8 @@
 # Changelog
 
-## [2.0.0] - 2025-11-28
+## [2.0.0] - 2025-12-01
 
-### 🎉 Major Release - Enhanced Features
+### 🎉 Major Release - Enhanced Features & Refactoring
 
 #### Added
 - **Interactive Chat Mode** - Multi-turn conversations with context (`chat` command)
@@ -27,6 +27,8 @@
 - **Documentation** - Comprehensive README with examples and usage guide
 
 #### Technical Improvements
+- **Refactoring & Modularization** - Moved core logic to `src/ai_cli_assistant/api.py` and adopted `src`-layout.
+- **Package Structure** - Moved prompts to `src/ai_cli_assistant/prompts` for better distribution.
 - Added `config.py` module for configuration management
 - Added `history.py` module for conversation logging
 - Integrated Pydantic for data validation

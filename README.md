@@ -32,7 +32,7 @@ cd ai_cli_assistant
 python3.14 -m venv .venv  # fallback to python3 if 3.14 is python3
 source .venv/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -e .
 cp .env.example .env
 echo "GEMINI_API_KEY=your-api-key-here" >> .env
 ```
@@ -43,7 +43,7 @@ PowerShell (Windows):
 python -m venv .venv
 .\\.venv\\Scripts\\Activate.ps1
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -e .
 Copy-Item .env.example .env
 Add-Content .env "GEMINI_API_KEY=your-api-key-here"
 ```
@@ -56,35 +56,11 @@ Add-Content .env "GEMINI_API_KEY=your-api-key-here"
 # Simple question
 python assistant.py ask -p "Explain Python lists"
 
-# Use specific model and temperature
-python assistant.py ask -p "Write a poem" -m gemini-2.5-pro -t 1.5
-
-# Read prompt from file
-python assistant.py ask -f prompt.txt
-
 # Interactive chat mode
 python assistant.py chat
 
 # Stream responses in real-time
 python assistant.py stream -p "Write a long story"
-
-# View conversation history
-python assistant.py history -n 5
-
-# Export history to file
-python assistant.py history --export history.md
-
-# List available models
-python assistant.py models
-
-# Initialize configuration file
-python assistant.py config --init
-
-# Show current configuration
-python assistant.py config
-
-# Enable verbose mode for debugging
-python assistant.py -v ask -p "Test"
 ```
 
 ### Commands
@@ -98,92 +74,100 @@ python assistant.py -v ask -p "Test"
 - **`models`** - List all available Gemini models
 - **`version`** - Show version information
 
-### Options
+### Configuration
 
-#### Global Options
-- `-v, --verbose` - Enable verbose output for debugging
+You can configure the assistant using a `.aiassistant.yaml` file in your home directory or project root.
 
-#### Ask Command
-- `-p, --prompt TEXT` - The question or instruction (can also use stdin or file)
-- `-f, --file PATH` - Read prompt from a file
-- `-m, --model TEXT` - Model name (default from config)
-- `-t, --temperature FLOAT` - Controls randomness 0.0-2.0 (default from config)
-- `--no-history` - Don't save this conversation to history
-
-#### Chat Command
-- `-m, --model TEXT` - Model name (default from config)
-- `-t, --temperature FLOAT` - Controls randomness 0.0-2.0
-
-#### Stream Command
-- `-p, --prompt TEXT` - The question or instruction
-- `-f, --file PATH` - Read prompt from a file
-- `-m, --model TEXT` - Model name (default from config)
-
-#### History Command
-- `-n, --limit INT` - Number of recent entries to show (default: 10)
-- `-e, --export PATH` - Export history to file (.md or .json)
-
-#### Config Command
-- `--init` - Create a default configuration file
-- `-p, --path PATH` - Custom path for config file
-
-### Configuration File
-
-Create a `.aiassistant.yaml` file in your home directory or project root:
-
-```yaml
-# Default model to use
-default_model: gemini-2.5-flash
-
-# Temperature (0.0 = deterministic, 2.0 = very random)
-temperature: 0.7
-
-# Maximum tokens in response
-max_tokens: 2048
-
-# Enable conversation history logging
-enable_history: true
-
-# History file location
-history_file: ~/.ai_assistant_history.jsonl
-
-# Verbose output
-verbose: false
-
-# Stream by default
-stream_by_default: false
+Initialize a default config file:
+```bash
+python assistant.py config --init
 ```
 
-Initialize with: `python assistant.py config --init`
+#### Configuration Options
 
-### System Prompts
+| Option | Default | Description |
+|--------|---------|-------------|
+| `default_model` | `gemini-2.5-flash` | The model used when `-m` is not specified. |
+| `temperature` | `0.7` | Controls randomness (0.0 = deterministic, 2.0 = creative). |
+| `max_tokens` | `2048` | Maximum number of tokens in the response. |
+| `enable_history` | `true` | Whether to log conversations to the history file. |
+| `history_file` | `~/.ai_assistant_history.jsonl` | Path to the conversation history file. |
+| `verbose` | `false` | Enable debug output by default. |
+| `stream_by_default` | `false` | Use streaming for all responses automatically. |
 
-Customize the AI's behavior by editing `prompts/base_prompt.txt`. The system prompt is automatically loaded and applied to all requests.
+Example `.aiassistant.yaml`:
+```yaml
+default_model: gemini-2.5-pro
+temperature: 0.8
+max_tokens: 4096
+enable_history: true
+verbose: false
+```
 
 ### Examples
 
+#### 1. Code Review & Analysis
+Read a file and ask the AI to review it.
 ```bash
-# Pipe input
-echo "Explain quantum computing" | python assistant.py ask
+python assistant.py ask -f src/main.py -p "Review this code for potential bugs and security issues."
+```
 
-# From file
-python assistant.py ask -f my_question.txt
+#### 2. Creative Writing
+Use a higher temperature for brainstorming or storytelling.
+```bash
+python assistant.py ask -p "Write a sci-fi story about AI" -t 1.2 -m gemini-2.5-pro
+```
 
-# High creativity (high temperature)
-python assistant.py ask -p "Write a creative story" -t 1.8
+#### 3. Data Summarization (Piping)
+Pipe output from other commands directly into the assistant.
+```bash
+cat data.csv | python assistant.py ask -p "Summarize the trends in this CSV data"
+```
 
-# Deterministic output (low temperature)
-python assistant.py ask -p "Calculate 2+2" -t 0.0
-
-# Chat with specific model
-python assistant.py chat -m gemini-2.5-pro
-
+#### 4. Managing History
+Export your conversation history to Markdown for sharing.
+```bash
 # Export last 20 conversations
 python assistant.py history -n 20 --export my_history.md
 ```
 
-## Troubleshooting
-- Missing API key: ensure `.env` contains `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) and the virtualenv is activated.
-- Request fails: check network connectivity, verify the model name, and confirm the API key has access.
-- Rich/typer import errors: reinstall deps inside the virtualenv (`pip install -r requirements.txt`).
-- Still stuck: run with `--help` to confirm CLI options and rerun with a simpler prompt.
+## Troubleshooting FAQ
+
+**Q: I get an "API key not found" error.**
+**A:** Ensure you have created a `.env` file with `GEMINI_API_KEY=your_key` and that your virtual environment is activated.
+
+**Q: The model returns "404 Not Found".**
+**A:** The model name in your config or command might be incorrect. Run `python assistant.py models` to see the list of available models for your API key.
+
+**Q: I'm getting "429 Resource Exhausted" errors.**
+**A:** You have hit the rate limit for the API. Wait a moment before trying again. The `gemini-2.5-flash` model typically has higher rate limits than `pro`.
+
+**Q: How do I debug connection issues?**
+**A:** Run any command with the `-v` or `--verbose` flag to see detailed error logs: `python assistant.py -v ask -p "test"`.
+
+## Contributing
+
+We welcome contributions! Please follow these steps:
+
+1.  **Fork the repository** and clone it locally.
+2.  **Install development dependencies**:
+    ```bash
+    pip install -e ".[dev]"
+    ```
+3.  **Create a branch** for your feature or fix.
+4.  **Run tests** to ensure everything is working:
+    ```bash
+    pytest
+    ```
+5.  **Lint your code** using `ruff` and `black`:
+    ```bash
+    ruff check .
+    black .
+    ```
+6.  **Submit a Pull Request** with a clear description of your changes.
+
+## Code of Conduct
+
+We are committed to providing a friendly, safe, and welcoming environment for all, regardless of gender, sexual orientation, disability, ethnicity, religion, or similar personal characteristic.
+
+Please be kind and courteous. Harassment, hate speech, and disrespectful behavior will not be tolerated.
