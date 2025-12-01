@@ -10,6 +10,8 @@ Or after installation:
     ai-assistant [command]
 """
 
+from __future__ import annotations
+
 from ai_cli_assistant.cli import main
 
 if __name__ == "__main__":

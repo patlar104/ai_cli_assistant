@@ -1,11 +1,12 @@
-from pathlib import Path
-import sys
 import pytest
 import typer
+
 from ai_cli_assistant import api
+
 
 class DummyClient:
     """Lightweight stand-in for the real SDK client."""
+
 
 @pytest.fixture(autouse=True)
 def disable_dotenv(monkeypatch):
@@ -14,6 +15,7 @@ def disable_dotenv(monkeypatch):
     monkeypatch.setattr(api, "load_dotenv", lambda: None)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+
 
 def test_build_client_prefers_gemini_when_both_keys_set(monkeypatch):
     captured = {}
@@ -32,6 +34,7 @@ def test_build_client_prefers_gemini_when_both_keys_set(monkeypatch):
     assert isinstance(client, DummyClient)
     assert captured["api_key"] == "gemini-secret"
 
+
 def test_build_client_falls_back_to_google_key(monkeypatch):
     captured = {}
 
@@ -46,6 +49,7 @@ def test_build_client_falls_back_to_google_key(monkeypatch):
 
     assert isinstance(client, DummyClient)
     assert captured["api_key"] == "google-only"
+
 
 def test_build_client_exits_when_no_keys_found(monkeypatch, capsys):
     monkeypatch.setattr(api.genai, "Client", lambda api_key: DummyClient())
