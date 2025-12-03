@@ -44,10 +44,23 @@ echo GEMINI_API_KEY=your-api-key-here >> .env
 git clone <your-repo>
 cd ai_cli_assistant
 # or run ./scripts/setup.sh to automate the steps below
-python3 -m venv .venv
+python3.14 -m venv .venv  # fallback to python3 if 3.14 is python3
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -e .
+copy .env.example .env
+echo GEMINI_API_KEY=your-api-key-here >> .env
+```
+
+### macOS / Linux (Bash)
+```bash
+git clone <your-repo>
+cd ai_cli_assistant
+# or run ./scripts/setup.sh to automate the steps below
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -e .  
 cp .env.example .env
 echo "GEMINI_API_KEY=your-api-key-here" >> .env
 ```
