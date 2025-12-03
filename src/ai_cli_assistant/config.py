@@ -1,6 +1,5 @@
 """Configuration management for the AI assistant."""
 
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -26,12 +25,12 @@ def get_config_path() -> Path:
     local_config = Path.cwd() / ".aiassistant.yaml"
     if local_config.exists():
         return local_config
-    
+
     # Check home directory
     home_config = Path.home() / ".aiassistant.yaml"
     if home_config.exists():
         return home_config
-    
+
     # Return default location (may not exist)
     return home_config
 
@@ -39,7 +38,7 @@ def get_config_path() -> Path:
 def load_config() -> AssistantConfig:
     """Load configuration from file or return defaults."""
     config_path = get_config_path()
-    
+
     if config_path.exists():
         try:
             with open(config_path, "r") as f:
@@ -48,7 +47,7 @@ def load_config() -> AssistantConfig:
         except Exception:
             # If config is invalid, return defaults
             return AssistantConfig()
-    
+
     return AssistantConfig()
 
 
@@ -56,9 +55,9 @@ def save_default_config(path: Optional[Path] = None) -> Path:
     """Save a default configuration file."""
     if path is None:
         path = Path.home() / ".aiassistant.yaml"
-    
+
     config = AssistantConfig()
-    
+
     config_content = f"""# AI Assistant Configuration
 # See https://github.com/patlar104/ai_cli_assistant for documentation
 
@@ -83,6 +82,6 @@ verbose: {config.verbose}
 # Stream responses by default
 stream_by_default: {config.stream_by_default}
 """
-    
+
     path.write_text(config_content)
     return path

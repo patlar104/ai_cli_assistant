@@ -118,12 +118,10 @@ def ask(
         console.print(f"[dim]Model: {model_name}[/]")
         console.print(f"[dim]Temperature: {temp}[/]")
         if system_prompt:
-            console.print(f"[dim]System prompt loaded[/]")
+            console.print("[dim]System prompt loaded[/]")
 
     try:
-        response = api.call_api_with_retry(
-            client, model_name, prompt_text, system_prompt, temp
-        )
+        response = api.call_api_with_retry(client, model_name, prompt_text, system_prompt, temp)
     except Exception as exc:
         console.print(
             Panel.fit(
@@ -218,9 +216,7 @@ def chat(
                 response_text = api.handle_response(response, model_name)
 
                 # Add response to history
-                conversation_history.append(
-                    {"role": "assistant", "content": response_text}
-                )
+                conversation_history.append({"role": "assistant", "content": response_text})
 
                 console.print(f"\n[bold green]Assistant:[/] {response_text}")
 
@@ -389,9 +385,7 @@ def show_config(
     if init:
         config_path = path or Path.home() / ".aiassistant.yaml"
         if config_path.exists():
-            overwrite = typer.confirm(
-                f"Config file already exists at {config_path}. Overwrite?"
-            )
+            overwrite = typer.confirm(f"Config file already exists at {config_path}. Overwrite?")
             if not overwrite:
                 console.print("[yellow]Cancelled.[/]")
                 return
@@ -406,7 +400,7 @@ def show_config(
     console.print(
         Panel(
             f"""[bold]Configuration:[/]
-            
+
 Config file: {config_path}
 Default model: {cfg.default_model}
 Temperature: {cfg.temperature}

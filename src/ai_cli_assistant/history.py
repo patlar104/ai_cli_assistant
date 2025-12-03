@@ -24,7 +24,7 @@ def get_history_file(config_path: Optional[str] = None) -> Path:
         path = Path(config_path).expanduser()
     else:
         path = Path.home() / ".ai_assistant_history.jsonl"
-    
+
     # Create parent directory if it doesn't exist
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
@@ -45,9 +45,9 @@ def log_conversation(
         response=response,
         tokens_used=tokens_used,
     )
-    
+
     file_path = get_history_file(history_file)
-    
+
     with open(file_path, "a", encoding="utf-8") as f:
         f.write(entry.model_dump_json() + "\n")
 
@@ -58,10 +58,10 @@ def load_history(
 ) -> List[ConversationEntry]:
     """Load conversation history from file."""
     file_path = get_history_file(history_file)
-    
+
     if not file_path.exists():
         return []
-    
+
     entries = []
     with open(file_path, "r", encoding="utf-8") as f:
         for line in f:
@@ -70,7 +70,7 @@ def load_history(
                 entries.append(ConversationEntry(**data))
             except (json.JSONDecodeError, ValueError):
                 continue
-    
+
     if limit:
         return entries[-limit:]
     return entries
@@ -90,7 +90,7 @@ def export_history(
 ) -> None:
     """Export history to a file."""
     entries = load_history(history_file)
-    
+
     if format == "markdown":
         content = "# AI Assistant Conversation History\n\n"
         for entry in entries:
@@ -101,5 +101,5 @@ def export_history(
             content += "---\n\n"
     else:  # json
         content = json.dumps([e.model_dump() for e in entries], indent=2)
-    
+
     output_file.write_text(content, encoding="utf-8")

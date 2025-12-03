@@ -1,4 +1,4 @@
-# AI CLI Assistant (Google Gen AI, Python 3.14)
+# AI CLI Assistant (Google Gen AI, Python 3.12+)
 
 Enhanced terminal assistant powered by the official Google Gen AI Python SDK. Features conversation history, interactive chat, streaming responses, and more.
 
@@ -16,13 +16,13 @@ Enhanced terminal assistant powered by the official Google Gen AI Python SDK. Fe
 - 🎨 **Rich Output**: Beautiful terminal formatting with Rich
 
 ## Prerequisites
-- Python 3.14+ installed
+- Python 3.12+ installed
 - Google Gemini API key set as `GEMINI_API_KEY` (preferred) or `GOOGLE_API_KEY` (legacy)
 
-### Install Python 3.14
-- macOS: `brew install python@3.14` (or use pyenv: `brew install pyenv && pyenv install 3.14.0`)
-- Linux: use your package manager if available, or `pyenv install 3.14.0`
-- Windows: install from the [official Python downloads](https://www.python.org/downloads/windows/) or `winget install Python.Python.3.14`
+### Install Python 3.12+
+- macOS: `brew install python@3.12` (or use pyenv: `brew install pyenv && pyenv install 3.12`)
+- Linux: use your package manager if available, or `pyenv install 3.12`
+- Windows: install from the [official Python downloads](https://www.python.org/downloads/windows/) or `winget install Python.Python.3.12`
 
 ## Setup
 
@@ -48,6 +48,19 @@ python3.14 -m venv .venv  # fallback to python3 if 3.14 is python3
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -e .
+copy .env.example .env
+echo GEMINI_API_KEY=your-api-key-here >> .env
+```
+
+### macOS / Linux (Bash)
+```bash
+git clone <your-repo>
+cd ai_cli_assistant
+# or run ./scripts/setup.sh to automate the steps below
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -e .  
 cp .env.example .env
 echo "GEMINI_API_KEY=your-api-key-here" >> .env
 ```

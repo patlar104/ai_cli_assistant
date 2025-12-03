@@ -12,6 +12,12 @@ build/
 dist/
 *.egg-info/
 
+# Test/coverage artifacts
+.coverage
+coverage.xml
+.pytest_cache/
+htmlcov/
+
 # Environment and secrets
 .env
 
