@@ -5,12 +5,12 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-from rich.console import Console
 from rich.panel import Panel
 
-from ai_cli_assistant import api
+from ai_cli_assistant import api, ui
 from ai_cli_assistant import config as config_module
 from ai_cli_assistant import history as history_module
+from ai_cli_assistant.utils import prompts
 
 # Version
 __version__ = "2.0.0"
@@ -20,7 +20,6 @@ app = typer.Typer(
     add_completion=False,
     help="Enhanced AI assistant powered by Google Gen AI.",
 )
-console = Console()
 
 # Global config
 _config: Optional[config_module.AssistantConfig] = None
@@ -48,15 +47,6 @@ def cli(
     _config = config_module.load_config()
     if verbose:
         _config.verbose = True
-
-
-def load_system_prompt() -> str:
-    """Load the base system prompt from file."""
-    # Note: This assumes prompts are installed or available relative to this file
-    prompt_path = Path(__file__).parent / "prompts" / "base_prompt.txt"
-    if prompt_path.exists():
-        return prompt_path.read_text().strip()
-    return ""
 
 
 @app.command(name="ask")
@@ -93,21 +83,30 @@ def ask(
 ) -> None:
     """Send a prompt to Google Gen AI and print the response text."""
     cfg = get_config()
-    client = api.build_client()
-    system_prompt = load_system_prompt()
+    
+    try:
+        client = api.build_client()
+    except api.APIError as e:
+        ui.print_error("Initialization Error", str(e))
+        raise typer.Exit(code=1)
+
+    system_prompt = prompts.load_system_prompt()
 
     # Get prompt from file or option or stdin
     if prompt_file:
         if not prompt_file.exists():
-            console.print(f"[red]File not found: {prompt_file}[/]")
+            ui.console.print(f"[red]File not found: {prompt_file}[/]")
             raise typer.Exit(code=1)
         prompt_text = prompt_file.read_text()
     elif prompt:
         prompt_text = prompt
     elif not sys.stdin.isatty():
-        prompt_text = sys.stdin.read()
+        prompt_text = sys.stdin.read().strip()
+        if not prompt_text:
+            ui.console.print("[red]Error: No prompt provided. Use -p, -f, or pipe input.[/]")
+            raise typer.Exit(code=1)
     else:
-        console.print("[red]Error: No prompt provided. Use -p, -f, or pipe input.[/]")
+        ui.console.print("[red]Error: No prompt provided. Use -p, -f, or pipe input.[/]")
         raise typer.Exit(code=1)
 
     # Use config defaults if not specified
@@ -115,33 +114,23 @@ def ask(
     temp = temperature if temperature is not None else cfg.temperature
 
     if cfg.verbose:
-        console.print(f"[dim]Model: {model_name}[/]")
-        console.print(f"[dim]Temperature: {temp}[/]")
+        ui.console.print(f"[dim]Model: {model_name}[/]")
+        ui.console.print(f"[dim]Temperature: {temp}[/]")
         if system_prompt:
-            console.print("[dim]System prompt loaded[/]")
+            ui.console.print("[dim]System prompt loaded[/]")
 
     try:
         response = api.call_api_with_retry(client, model_name, prompt_text, system_prompt, temp)
+        response_text = api.handle_response(response, model_name)
+    except api.SafetyError as e:
+        ui.print_error("Safety Blocked", str(e))
+        raise typer.Exit(code=1)
     except Exception as exc:
-        console.print(
-            Panel.fit(
-                f"Request failed:\n{exc}",
-                title="API Error",
-                border_style="red",
-            )
-        )
+        ui.print_error("API Error", f"Request failed:\n{exc}")
         raise typer.Exit(code=1)
 
-    response_text = api.handle_response(response, model_name)
-
     # Display response
-    console.print(
-        Panel(
-            response_text,
-            title=f"Model: {model_name}",
-            border_style="green",
-        )
-    )
+    ui.print_response(model_name, response_text)
 
     # Log to history
     if cfg.enable_history and not no_history:
@@ -170,13 +159,19 @@ def chat(
 ) -> None:
     """Start an interactive chat session with the AI."""
     cfg = get_config()
-    client = api.build_client()
-    system_prompt = load_system_prompt()
+    
+    try:
+        client = api.build_client()
+    except api.APIError as e:
+        ui.print_error("Initialization Error", str(e))
+        raise typer.Exit(code=1)
+
+    system_prompt = prompts.load_system_prompt()
 
     model_name = model or cfg.default_model
     temp = temperature if temperature is not None else cfg.temperature
 
-    console.print(
+    ui.console.print(
         Panel(
             f"[bold green]Chat mode activated![/]\n"
             f"Model: {model_name}\n"
@@ -190,10 +185,10 @@ def chat(
 
     while True:
         try:
-            user_input = console.input("\n[bold blue]You:[/] ").strip()
+            user_input = ui.console.input("\n[bold blue]You:[/] ").strip()
 
             if user_input.lower() in ["exit", "quit", "q"]:
-                console.print("[green]Goodbye![/]")
+                ui.console.print("[green]Goodbye![/]")
                 break
 
             if not user_input:
@@ -208,17 +203,16 @@ def chat(
             )
 
             try:
-                with console.status("[bold green]Thinking..."):
+                with ui.console.status("[bold green]Thinking..."):
                     response = api.call_api_with_retry(
                         client, model_name, full_prompt, system_prompt, temp
                     )
-
-                response_text = api.handle_response(response, model_name)
+                    response_text = api.handle_response(response, model_name)
 
                 # Add response to history
                 conversation_history.append({"role": "assistant", "content": response_text})
 
-                console.print(f"\n[bold green]Assistant:[/] {response_text}")
+                ui.console.print(f"\n[bold green]Assistant:[/] {response_text}")
 
                 # Log to history
                 if cfg.enable_history:
@@ -229,12 +223,15 @@ def chat(
                         history_file=cfg.history_file,
                     )
 
+            except api.SafetyError as e:
+                ui.print_error("Safety Blocked", str(e))
+                continue
             except Exception as exc:
-                console.print(f"[red]Error: {exc}[/]")
+                ui.console.print(f"[red]Error: {exc}[/]")
                 continue
 
         except (KeyboardInterrupt, EOFError):
-            console.print("\n[green]Goodbye![/]")
+            ui.console.print("\n[green]Goodbye![/]")
             break
 
 
@@ -261,26 +258,35 @@ def stream_ask(
 ) -> None:
     """Stream responses in real-time."""
     cfg = get_config()
-    client = api.build_client()
-    system_prompt = load_system_prompt()
+    
+    try:
+        client = api.build_client()
+    except api.APIError as e:
+        ui.print_error("Initialization Error", str(e))
+        raise typer.Exit(code=1)
+
+    system_prompt = prompts.load_system_prompt()
 
     # Get prompt
     if prompt_file:
         if not prompt_file.exists():
-            console.print(f"[red]File not found: {prompt_file}[/]")
+            ui.console.print(f"[red]File not found: {prompt_file}[/]")
             raise typer.Exit(code=1)
         prompt_text = prompt_file.read_text()
     elif prompt:
         prompt_text = prompt
     elif not sys.stdin.isatty():
-        prompt_text = sys.stdin.read()
+        prompt_text = sys.stdin.read().strip()
+        if not prompt_text:
+            ui.console.print("[red]Error: No prompt provided. Use -p, -f, or pipe input.[/]")
+            raise typer.Exit(code=1)
     else:
-        console.print("[red]Error: No prompt provided. Use -p, -f, or pipe input.[/]")
+        ui.console.print("[red]Error: No prompt provided. Use -p, -f, or pipe input.[/]")
         raise typer.Exit(code=1)
 
     model_name = model or cfg.default_model
 
-    console.print(f"[dim]Streaming from {model_name}...[/]\n")
+    ui.console.print(f"[dim]Streaming from {model_name}...[/]\n")
 
     try:
         config_dict = {}
@@ -294,10 +300,10 @@ def stream_ask(
             config=config_dict if config_dict else None,
         ):
             if hasattr(chunk, "text"):
-                console.print(chunk.text, end="")
+                ui.print_stream(chunk.text)
                 full_response += chunk.text
 
-        console.print("\n")
+        ui.console.print("\n")
 
         # Log to history
         if cfg.enable_history:
@@ -309,7 +315,7 @@ def stream_ask(
             )
 
     except Exception as exc:
-        console.print(f"\n[red]Error: {exc}[/]")
+        ui.console.print(f"\n[red]Error: {exc}[/]")
         raise typer.Exit(code=1)
 
 
@@ -334,24 +340,24 @@ def show_history(
     if export:
         fmt = "json" if export.suffix == ".json" else "markdown"
         history_module.export_history(export, cfg.history_file, fmt)
-        console.print(f"[green]History exported to {export}[/]")
+        ui.console.print(f"[green]History exported to {export}[/]")
         return
 
     entries = history_module.load_history(cfg.history_file, limit=limit)
 
     if not entries:
-        console.print("[yellow]No history found.[/]")
+        ui.console.print("[yellow]No history found.[/]")
         return
 
     for entry in entries:
-        console.print(
+        ui.console.print(
             Panel(
                 f"[bold]Prompt:[/] {entry.prompt}\n\n[bold]Response:[/] {entry.response}",
                 title=f"{entry.timestamp} | {entry.model}",
                 border_style="blue",
             )
         )
-        console.print()
+        ui.console.print()
 
 
 @app.command(name="clear-history")
@@ -362,9 +368,9 @@ def clear_history_cmd() -> None:
     confirm = typer.confirm("Are you sure you want to clear all history?")
     if confirm:
         history_module.clear_history(cfg.history_file)
-        console.print("[green]History cleared.[/]")
+        ui.console.print("[green]History cleared.[/]")
     else:
-        console.print("[yellow]Cancelled.[/]")
+        ui.console.print("[yellow]Cancelled.[/]")
 
 
 @app.command(name="config")
@@ -387,17 +393,17 @@ def show_config(
         if config_path.exists():
             overwrite = typer.confirm(f"Config file already exists at {config_path}. Overwrite?")
             if not overwrite:
-                console.print("[yellow]Cancelled.[/]")
+                ui.console.print("[yellow]Cancelled.[/]")
                 return
 
         saved_path = config_module.save_default_config(config_path)
-        console.print(f"[green]Configuration file created at {saved_path}[/]")
+        ui.console.print(f"[green]Configuration file created at {saved_path}[/]")
         return
 
     cfg = get_config()
     config_path = config_module.get_config_path()
 
-    console.print(
+    ui.console.print(
         Panel(
             f"""[bold]Configuration:[/]
 
@@ -418,34 +424,38 @@ Stream by default: {cfg.stream_by_default}""",
 @app.command(name="models")
 def list_models() -> None:
     """List available models."""
-    client = api.build_client()
+    try:
+        client = api.build_client()
+    except api.APIError as e:
+        ui.print_error("Initialization Error", str(e))
+        raise typer.Exit(code=1)
 
     try:
-        console.print("[bold]Fetching available models...[/]\n")
+        ui.console.print("[bold]Fetching available models...[/]\n")
 
         # Get models
         models = client.models.list()
 
-        console.print("[bold green]Available Models:[/]\n")
+        ui.console.print("[bold green]Available Models:[/]\n")
 
         for model in models:
             model_name = getattr(model, "name", "Unknown")
             display_name = getattr(model, "display_name", model_name)
             description = getattr(model, "description", "No description available")
 
-            console.print(f"[bold cyan]{display_name}[/]")
-            console.print(f"  Name: {model_name}")
-            console.print(f"  Description: {description}\n")
+            ui.console.print(f"[bold cyan]{display_name}[/]")
+            ui.console.print(f"  Name: {model_name}")
+            ui.console.print(f"  Description: {description}\n")
 
     except Exception as exc:
-        console.print(f"[red]Error fetching models: {exc}[/]")
+        ui.console.print(f"[red]Error fetching models: {exc}[/]")
         raise typer.Exit(code=1)
 
 
 @app.command(name="version")
 def version() -> None:
     """Show version information."""
-    console.print(f"[bold green]AI CLI Assistant v{__version__}[/]")
+    ui.console.print(f"[bold green]AI CLI Assistant v{__version__}[/]")
 
 
 def main() -> None:

@@ -3,41 +3,41 @@
 import os
 from typing import Any, Optional
 
-import typer
 from dotenv import load_dotenv
 from google import genai
-from rich.console import Console
-from rich.panel import Panel
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-console = Console()
+
+class APIError(Exception):
+    """Base class for API errors."""
+
+
+class MissingAPIKeyError(APIError):
+    """Raised when no API key is found."""
+
+
+class SafetyError(APIError):
+    """Raised when content is blocked by safety filters."""
 
 
 def build_client() -> genai.Client:
-    """Create a Gen AI client using the API key from the environment."""
+    """Create a Gen AI client using the API key from the environment.
+    
+    Raises:
+        MissingAPIKeyError: If no API key is set.
+        APIError: If client initialization fails.
+    """
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        console.print(
-            Panel.fit(
-                "Set GEMINI_API_KEY (preferred) or GOOGLE_API_KEY in the environment or .env file.",
-                title="Missing API key",
-                border_style="red",
-            )
+        raise MissingAPIKeyError(
+            "Set GEMINI_API_KEY (preferred) or GOOGLE_API_KEY in the environment or .env file."
         )
-        raise typer.Exit(code=1)
 
     try:
         return genai.Client(api_key=api_key)
     except Exception as exc:
-        console.print(
-            Panel.fit(
-                f"Failed to initialize Google Gen AI client:\n{exc}",
-                title="Initialization Error",
-                border_style="red",
-            )
-        )
-        raise typer.Exit(code=1)
+        raise APIError(f"Failed to initialize Google Gen AI client: {exc}")
 
 
 @retry(
@@ -69,7 +69,12 @@ def call_api_with_retry(
 
 
 def handle_response(response: Any, model: str) -> str:
-    """Handle API response and extract text or handle errors."""
+    """Handle API response and extract text or raise errors.
+    
+    Raises:
+        SafetyError: If the response was blocked.
+        APIError: If the response was empty.
+    """
     if not getattr(response, "text", None):
         safety_details = []
 
@@ -100,22 +105,8 @@ def handle_response(response: Any, model: str) -> str:
                     )
 
         if safety_details:
-            console.print(
-                Panel.fit(
-                    "\n".join(safety_details),
-                    title="Safety Blocked",
-                    border_style="red",
-                )
-            )
-        else:
-            console.print(
-                Panel.fit(
-                    "No text returned from the model.",
-                    title="Empty Response",
-                    border_style="yellow",
-                )
-            )
-
-        raise typer.Exit(code=1)
+            raise SafetyError("\n".join(safety_details))
+        
+        raise APIError("No text returned from the model.")
 
     return response.text.strip()

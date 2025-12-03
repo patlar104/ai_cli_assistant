@@ -51,17 +51,11 @@ def test_build_client_falls_back_to_google_key(monkeypatch):
     assert captured["api_key"] == "google-only"
 
 
-def test_build_client_exits_when_no_keys_found(monkeypatch, capsys):
+def test_build_client_raises_error_when_no_keys_found(monkeypatch):
     monkeypatch.setattr(api.genai, "Client", lambda api_key: DummyClient())
 
-    with pytest.raises(typer.Exit) as excinfo:
+    # Now we expect MissingAPIKeyError instead of typer.Exit
+    with pytest.raises(api.MissingAPIKeyError) as excinfo:
         api.build_client()
 
-    assert excinfo.value.exit_code == 1
-    # We need to capture stdout/stderr to check for the error message
-    # The cli uses rich console, which prints to stdout/stderr
-    # capsys should capture it.
-    output = capsys.readouterr().out
-    # The error message in api.py says "Set GEMINI_API_KEY (preferred) or GOOGLE_API_KEY"
-    assert "GEMINI_API_KEY" in output
-    assert "GOOGLE_API_KEY" in output
+    assert "GEMINI_API_KEY" in str(excinfo.value)
