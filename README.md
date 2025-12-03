@@ -25,27 +25,31 @@ Enhanced terminal assistant powered by the official Google Gen AI Python SDK. Fe
 - Windows: install from the [official Python downloads](https://www.python.org/downloads/windows/) or `winget install Python.Python.3.14`
 
 ## Setup
+
+### Windows (Command Prompt - CMD)
+```cmd
+git clone <your-repo>
+cd ai_cli_assistant
+REM or run scripts\setup.ps1 in PowerShell
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install --upgrade pip
+pip install -e .
+copy .env.example .env
+echo GEMINI_API_KEY=your-api-key-here >> .env
+```
+
+### macOS / Linux (Bash)
 ```bash
 git clone <your-repo>
 cd ai_cli_assistant
-# or run ./setup.sh to automate the steps below
+# or run ./scripts/setup.sh to automate the steps below
 python3.14 -m venv .venv  # fallback to python3 if 3.14 is python3
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -e .
 cp .env.example .env
 echo "GEMINI_API_KEY=your-api-key-here" >> .env
-```
-
-PowerShell (Windows):
-```powershell
-# or run ./setup.ps1
-python -m venv .venv
-.\\.venv\\Scripts\\Activate.ps1
-pip install --upgrade pip
-pip install -e .
-Copy-Item .env.example .env
-Add-Content .env "GEMINI_API_KEY=your-api-key-here"
 ```
 
 ## Usage
